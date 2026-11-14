@@ -71,7 +71,7 @@ em { font-style: italic; color: var(--rose-deep); }
 .btn--ghost { border-color: var(--choc); color: var(--choc); background: transparent; }
 .btn--ghost:hover { background: var(--choc); color: #fff; }
 .btn--block { width: 100%; }
-.btn[disabled] { opacity: .45; pointer-events: none; }
+.btn[disabled], .btn.is-disabled { opacity: .45; pointer-events: none; }
 .icon-btn {
   width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--line);
   background: var(--paper); display: inline-grid; place-items: center; font-size: 1rem;
@@ -276,6 +276,7 @@ em { font-style: italic; color: var(--rose-deep); }
 .product__price small { display: block; font-family: var(--sans); font-size: .72rem; color: var(--muted); font-weight: 500; margin-top: 3px; }
 .product__price--ask { font-size: 1.1rem; }
 .add-btn {
+  display: inline-block; text-decoration: none;
   padding: 10px 16px; border-radius: 999px; border: 0; background: var(--rose-deep); color: #fff; font-weight: 600; font-size: .85rem;
   transition: background .2s, transform .15s; white-space: nowrap;
 }

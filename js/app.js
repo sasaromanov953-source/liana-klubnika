@@ -4,6 +4,7 @@
 
   const WHATSAPP = '79787646296';
   const $ = (s, r = document) => r.querySelector(s);
+  const waLink = text => `https://wa.me/${WHATSAPP}${text ? '?text=' + encodeURIComponent(text) : ''}`;
   const fmt = n => n.toLocaleString('ru-RU') + ' ₽';
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
@@ -138,7 +139,7 @@
       ? `<div class="product__price product__price--ask">Цена по запросу</div>`
       : `<div class="product__price">${fmt(price)}${p.unit ? `<small>${p.unit}</small>` : ''}</div>`;
     const btn = price == null
-      ? `<button class="add-btn add-btn--ask" data-ask>Узнать цену</button>`
+      ? `<a class="add-btn add-btn--ask" href="${waLink(`Здравствуйте, Лиана! Подскажите, пожалуйста, цену: «${p.title}».`)}" target="_blank" rel="noopener">Узнать цену</a>`
       : `<button class="add-btn" data-add>В корзину</button>`;
     return `<article class="product" data-id="${p.id}">
       <div class="product__media">${media(p)}${p.tag ? `<span class="product__tag">${esc(p.tag)}</span>` : ''}</div>
@@ -175,9 +176,6 @@
       btn.textContent = 'Добавлено ✓'; btn.classList.add('added');
       setTimeout(() => { btn.textContent = 'В корзину'; btn.classList.remove('added'); }, 1400);
     }
-    if (e.target.closest('[data-ask]')) {
-      openWA(`Здравствуйте, Лиана! Подскажите, пожалуйста, цену: «${p.title}».`);
-    }
   });
 
   /* ---------- Корзина ---------- */
@@ -203,7 +201,8 @@
     $('#cartCount').textContent = count;
     $('#cartTotal').textContent = fmt(total);
     $('#cartHint').textContent = count ? 'Доставка рассчитывается отдельно. Бонус на первый заказ — укажите в пожеланиях.' : '';
-    $('#checkoutBtn').disabled = !count;
+    $('#checkoutBtn').classList.toggle('is-disabled', !count);
+    updateCheckoutLink();
     $('#orderForm').hidden = !count;
     if (!count) {
       $('#cartList').innerHTML = `<div class="cart-empty">${berrySVG({ choc: '#e9a3ae', top: 'drizzle' })}<p>Корзина пока пустая.<br>Загляните в каталог — там вкусно.</p></div>`;
@@ -242,8 +241,7 @@
     form.querySelector('.order-form__address').style.display = form.delivery.value === 'Самовывоз' ? 'none' : '';
   });
 
-  $('#checkoutBtn').addEventListener('click', () => {
-    if (!form.reportValidity()) return;
+  function buildOrder() {
     const f = Object.fromEntries(new FormData(form));
     const lines = cart.map((i, n) => `${n + 1}. ${byId[i.id].title}${itemOpt(i) ? ` (${itemOpt(i)})` : ''} × ${i.qty} — ${fmt(itemPrice(i) * i.qty)}`);
     const total = cart.reduce((s, i) => s + i.qty * itemPrice(i), 0);
@@ -256,12 +254,16 @@
       `Получение: ${f.delivery}${f.delivery === 'Доставка' && f.address ? ' — ' + f.address : ''}`,
       f.comment ? `Пожелания: ${f.comment}` : ''
     ].filter((l, i, a) => !(l === '' && a[i - 1] === '')).join('\n').trim();
-    openWA(msg);
-  });
-
-  function openWA(text) {
-    window.open(`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(text)}`, '_blank', 'noopener');
+    return msg;
   }
+  function updateCheckoutLink() { $('#checkoutBtn').href = waLink(cart.length ? buildOrder() : ''); }
+  form.addEventListener('input', updateCheckoutLink);
+  form.addEventListener('change', updateCheckoutLink);
+  $('#checkoutBtn').addEventListener('click', e => {
+    // настоящая ссылка: если форма не заполнена — не переходим, подсвечиваем поля
+    if (!cart.length || !form.reportValidity()) { e.preventDefault(); return; }
+    updateCheckoutLink();
+  });
 
   let toastTimer;
   function toast(text) {
